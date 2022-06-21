@@ -1211,6 +1211,7 @@ func (s *Scenario) prepareStartInvalidIsuPost(ctx context.Context) (*model.Isu, 
 	RegisterToJiaAPI(isu, streamsForPoster)
 
 	targetBaseURL, err := url.Parse(s.BaseURL)
+	fmt.Printf("s.BaseURL: %s\n", s.BaseURL)
 	if err != nil {
 		logger.AdminLogger.Panic(err)
 	}

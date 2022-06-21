@@ -118,6 +118,8 @@ func init() {
 		panic("invalid targetableAddresses: length must be 1~3")
 	}
 	// validate jia-service-url
+	fmt.Println("here")
+	fmt.Println(jiaServiceURLStr)
 	jiaServiceURL, err = url.Parse(jiaServiceURLStr)
 	if err != nil {
 		panic(err)

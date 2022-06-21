@@ -65,6 +65,7 @@ func (s *Scenario) JiaAPIService(ctx context.Context) {
 	} else {
 		bindPort = "0.0.0.0:80"
 	}
+	fmt.Printf("isu service port: %s\n", bindPort)
 	go func() {
 		defer logger.AdminLogger.Println("--- ISU協会サービス END")
 		err := e.Start(bindPort)
@@ -143,6 +144,7 @@ func (s *Scenario) postActivate(c echo.Context) error {
 			targetBaseURL.Host = ipAddr
 		}
 
+		fmt.Printf("targetBaseURL 2: %s\n", targetBaseURL)
 		// activate 済みフラグを立てる
 		isuIsActivated[state.IsuUUID] = struct{}{}
 		//activate

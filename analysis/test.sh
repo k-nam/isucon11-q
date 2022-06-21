@@ -6,7 +6,7 @@ export target=go
 # golangci-lint run -c ../../.github/.golangci.yml
 # popd
 
-DIR=$(pwd)/$(date +%Y-%m-%d--%H:%M:%S)
+DIR=$(pwd)/$(date +%Y-%m-%d_%H-%M-%S)
 mkdir $DIR
 
 cd ../development

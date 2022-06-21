@@ -3,6 +3,7 @@ package scenario
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"math"
 	"math/rand"
 	"net/http"
@@ -96,7 +97,7 @@ func (s *Scenario) postConditionNumReporter(ctx context.Context, step *isucandar
 
 //POST /api/condition/{jia_isu_id}をたたく Goroutine
 func (s *Scenario) keepPosting(ctx context.Context, targetBaseURL *url.URL, fqdn string, isu *model.Isu, scenarioChan *model.StreamsForPoster) {
-
+	fmt.Printf("targetBaseURL %s\n", targetBaseURL.Host)
 	targetBaseURLMapMutex.Lock()
 	targetBaseURLMap[targetBaseURL.String()] = fqdn
 	targetBaseURLMapMutex.Unlock()
