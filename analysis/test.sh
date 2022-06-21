@@ -2,9 +2,9 @@ set -e
 
 export target=go
 
-pushd ../webapp/go
-golangci-lint run -c ../../.github/.golangci.yml
-popd
+# pushd ../webapp/go
+# golangci-lint run -c ../../.github/.golangci.yml
+# popd
 
 DIR=$(pwd)/$(date +%H:%M:%S)
 mkdir $DIR
