@@ -24,12 +24,12 @@ func (s *Scenario) InitializeData(ctx context.Context) {
 		logger.AdminLogger.Panicln(fmt.Errorf("初期データのParseに失敗しました: %v", err))
 	}
 
-	for i, _ := range users {
+	for i := range users {
 		user := &users[i]
 
 		//var userConditions []model.IsuCondition
 
-		for key, _ := range user.IsuListByID {
+		for key := range user.IsuListByID {
 			// isu の初期化
 			isu := user.IsuListByID[key]
 			model.NewIsuRawForInitData(isu, user, key)

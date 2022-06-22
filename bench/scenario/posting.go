@@ -3,7 +3,6 @@ package scenario
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"math"
 	"math/rand"
 	"net/http"
