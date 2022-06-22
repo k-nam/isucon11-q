@@ -977,9 +977,10 @@ func getIsuConditions(c echo.Context) error {
 	if conditionLevelCSV == "" {
 		return c.String(http.StatusBadRequest, "missing: condition_level")
 	}
-	conditionLevel := map[string]interface{}{}
-	for _, level := range strings.Split(conditionLevelCSV, ",") {
-		conditionLevel[level] = struct{}{}
+
+	var conditionLevels []interface{}
+	for _, cond := range strings.Split(conditionLevelCSV, ",") {
+		conditionLevels = append(conditionLevels, cond)
 	}
 
 	startTimeStr := c.QueryParam("start_time")
@@ -1006,7 +1007,7 @@ func getIsuConditions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	conditionsResponse, err := getIsuConditionsFromDB(db, jiaIsuUUID, endTime, conditionLevel, startTime, conditionLimit, isuName)
+	conditionsResponse, err := getIsuConditionsFromDB(db, jiaIsuUUID, endTime, conditionLevels, startTime, conditionLimit, isuName)
 	if err != nil {
 		c.Logger().Errorf("db error: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -1015,30 +1016,39 @@ func getIsuConditions(c echo.Context) error {
 }
 
 // ISUのコンディションをDBから取得
-func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, conditionLevel map[string]interface{}, startTime time.Time,
+func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, conditionLevels []interface{}, startTime time.Time,
 	limit int, isuName string) ([]*GetIsuConditionResponse, error) {
 
 	conditions := []IsuCondition{}
 	var err error
 
+	var queryBase, query string
+
+	var params []interface{}
+
 	if startTime.IsZero() {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime,
-		)
+		queryBase = fmt.Sprintf("SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
+			"	AND `timestamp` < ?" +
+			" AND `condition` IN (?)" +
+			"	ORDER BY `timestamp` DESC LIMIT ?")
+		query, params, err = sqlx.In(queryBase, jiaIsuUUID, endTime, conditionLevels, limit)
 	} else {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	AND ? <= `timestamp`"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime, startTime,
-		)
+		queryBase = fmt.Sprintf("SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?" +
+			"	AND `timestamp` < ?" +
+			"	AND ? <= `timestamp`" +
+			" AND `condition` IN (?)" +
+			"	ORDER BY `timestamp` DESC LIMIT ?")
+		query, params, err = sqlx.In(queryBase, jiaIsuUUID, endTime, startTime, conditionLevels, limit)
 	}
+
 	if err != nil {
-		return nil, fmt.Errorf("db error: %v", err)
+		return nil, fmt.Errorf("db error 1: %v", err)
+	}
+
+	fmt.Printf("query: %s, %v", query, params)
+	err = db.Select(&conditions, query, params...)
+	if err != nil {
+		return nil, fmt.Errorf("db error 2: %v", err)
 	}
 
 	conditionsResponse := []*GetIsuConditionResponse{}
@@ -1048,18 +1058,18 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 			continue
 		}
 
-		if _, ok := conditionLevel[cLevel]; ok {
-			data := GetIsuConditionResponse{
-				JIAIsuUUID:     c.JIAIsuUUID,
-				IsuName:        isuName,
-				Timestamp:      c.Timestamp.Unix(),
-				IsSitting:      c.IsSitting,
-				Condition:      c.Condition,
-				ConditionLevel: cLevel,
-				Message:        c.Message,
-			}
-			conditionsResponse = append(conditionsResponse, &data)
+		// if _, ok := conditionLevel[cLevel]; ok {
+		data := GetIsuConditionResponse{
+			JIAIsuUUID:     c.JIAIsuUUID,
+			IsuName:        isuName,
+			Timestamp:      c.Timestamp.Unix(),
+			IsSitting:      c.IsSitting,
+			Condition:      c.Condition,
+			ConditionLevel: cLevel,
+			Message:        c.Message,
 		}
+		conditionsResponse = append(conditionsResponse, &data)
+		// }
 	}
 
 	if len(conditionsResponse) > limit {
@@ -1092,7 +1102,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
 	time.Sleep(time.Second)
-	
+
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
 	if err != nil {
@@ -1200,6 +1210,7 @@ func getTrend(c echo.Context) error {
 // POST /api/condition/:jia_isu_uuid
 // ISUからのコンディションを受け取る
 var postIsuConditionCount = 0
+
 func postIsuCondition(c echo.Context) error {
 	postIsuConditionCount++
 	// fmt.Printf("postIsuConditionCount: %d\n", postIsuConditionCount)
