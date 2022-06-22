@@ -727,10 +727,8 @@ var getGraphCount = 0
 // GET /api/isu/:jia_isu_uuid/graph
 // ISUのコンディショングラフ描画のための情報を取得
 func getIsuGraph(c echo.Context) error {
-	// getGraphCount++
-	// if getGraphCount % 1000 == 0 {
+	getGraphCount++
 	// fmt.Printf("getGraphCount count: %d\n", getGraphCount)
-	// }
 
 	jiaUserID, errStatusCode, err := getUserIDFromSession(c)
 	if err != nil {
@@ -788,15 +786,26 @@ func getIsuGraph(c echo.Context) error {
 
 // グラフのデータ点を一日分生成
 func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Time) ([]GraphResponse, error) {
+	// fmt.Println("generateIsuGraphResponse")
 	dataPoints := []GraphDataPointWithInfo{}
 	conditionsInThisHour := []IsuCondition{}
 	timestampsInThisHour := []int64{}
 	var startTimeInThisHour time.Time
 	var condition IsuCondition
 
-	rows, err := tx.Queryx("SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` ASC", jiaIsuUUID)
+	endTime := graphDate.Add(time.Hour * 24)
+	start := graphDate.Format("2006-01-02 15:04:05")
+	end := endTime.Format("2006-01-02 15:04:05")
+	rows, err := tx.Queryx("SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` >= ? AND `timestamp` < ? ORDER BY `timestamp` ASC", jiaIsuUUID, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("db error: %v", err)
+	}
+
+
+	if graphDate.Hour() != 0 {
+		fmt.Println("not exact day")
+		fmt.Printf("graph date: %s", graphDate.Format("2006-01-02 15:04:05"))
+		panic(nil)
 	}
 
 	var rowCount = 0
@@ -847,7 +856,7 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 				ConditionTimestamps: timestampsInThisHour})
 	}
 
-	endTime := graphDate.Add(time.Hour * 24)
+
 	startIndex := len(dataPoints)
 	endNextIndex := len(dataPoints)
 	for i, graph := range dataPoints {
@@ -1204,6 +1213,7 @@ func getTrend(c echo.Context) error {
 // POST /api/condition/:jia_isu_uuid
 // ISUからのコンディションを受け取る
 var postIsuConditionCount = 0
+
 func postIsuCondition(c echo.Context) error {
 	postIsuConditionCount++
 	// fmt.Printf("postIsuConditionCount: %d\n", postIsuConditionCount)

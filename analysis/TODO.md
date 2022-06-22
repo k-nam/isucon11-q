@@ -7,7 +7,7 @@
 - 113 isu
 - 117k isu_condition
 - 25 distinct characters
-
+- isu_condition timestamp format: '2021-08-10 20:07:03'
 
 # Score
 - 1. Default 3000
@@ -17,6 +17,8 @@
 
 # Idea
 - Use webserver cache
+- Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
+- Use WHERE for timestamp in /api/isu/graph
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.

@@ -144,7 +144,7 @@ func (s *Scenario) postActivate(c echo.Context) error {
 			targetBaseURL.Host = ipAddr
 		}
 
-		fmt.Printf("targetBaseURL 2: %s\n", targetBaseURL)
+		// fmt.Printf("targetBaseURL 2: %s\n", targetBaseURL)
 		// activate 済みフラグを立てる
 		isuIsActivated[state.IsuUUID] = struct{}{}
 		//activate
