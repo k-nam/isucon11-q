@@ -19,4 +19,4 @@
 - Use webserver cache
 
 # Bug note
-- Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score
+- Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.

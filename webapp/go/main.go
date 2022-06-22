@@ -799,7 +799,9 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 		return nil, fmt.Errorf("db error: %v", err)
 	}
 
+	var rowCount = 0
 	for rows.Next() {
+		rowCount++
 		err = rows.StructScan(&condition)
 		if err != nil {
 			return nil, err
@@ -828,6 +830,8 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 		conditionsInThisHour = append(conditionsInThisHour, condition)
 		timestampsInThisHour = append(timestampsInThisHour, condition.Timestamp.Unix())
 	}
+
+	// fmt.Printf("graph row count %d\n", rowCount)
 
 	if len(conditionsInThisHour) > 0 {
 		data, err := calculateGraphDataPoint(conditionsInThisHour)
@@ -1092,7 +1096,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
 	time.Sleep(time.Second)
-	
+
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
 	if err != nil {
