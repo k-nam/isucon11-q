@@ -489,11 +489,7 @@ func getIsuList(c echo.Context) error {
 
 		var formattedCondition *GetIsuConditionResponse
 		if foundLastCondition {
-			conditionLevel, err := calculateConditionLevel(lastCondition.Condition)
-			if err != nil {
-				c.Logger().Error(err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
+			conditionLevel := lastCondition.Condition
 
 			formattedCondition = &GetIsuConditionResponse{
 				JIAIsuUUID:     lastCondition.JIAIsuUUID,
@@ -1053,7 +1049,6 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 
 	conditionsResponse := []*GetIsuConditionResponse{}
 	for _, c := range conditions {
-		cLevel, err := calculateConditionLevel(c.Condition)
 		if err != nil {
 			continue
 		}
@@ -1065,7 +1060,7 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 			Timestamp:      c.Timestamp.Unix(),
 			IsSitting:      c.IsSitting,
 			Condition:      c.Condition,
-			ConditionLevel: cLevel,
+			ConditionLevel: c.Condition,
 			Message:        c.Message,
 		}
 		conditionsResponse = append(conditionsResponse, &data)
@@ -1158,7 +1153,7 @@ func getTrend(c echo.Context) error {
 	characterCriticalIsuConditions := map[string][]*TrendCondition{}
 
 	for _, cond := range charIsuConditions {
-		conditionLevel, err := calculateConditionLevel(cond.Condition)
+		conditionLevel := cond.Condition
 		if err != nil {
 			c.Logger().Error(err)
 			return c.NoContent(http.StatusInternalServerError)
@@ -1259,11 +1254,12 @@ func postIsuCondition(c echo.Context) error {
 			return c.String(http.StatusBadRequest, "bad request body")
 		}
 
+		cond2, _ := calculateConditionLevel(cond.Condition)
 		_, err = tx.Exec(
 			"INSERT INTO `isu_condition`"+
 				"	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
 				"	VALUES (?, ?, ?, ?, ?)",
-			jiaIsuUUID, timestamp, cond.IsSitting, cond.Condition, cond.Message)
+			jiaIsuUUID, timestamp, cond.IsSitting, cond2, cond.Message)
 		if err != nil {
 			c.Logger().Errorf("db error: %v", err)
 			return c.NoContent(http.StatusInternalServerError)
