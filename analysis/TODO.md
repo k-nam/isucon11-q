@@ -15,6 +15,8 @@
 - 3. 2 + Cache image (/icon)
 
 
+# Idea
+- Use webserver cache
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score
