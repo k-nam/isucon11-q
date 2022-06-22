@@ -790,7 +790,8 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 	dataPoints := []GraphDataPointWithInfo{}
 	conditionsInThisHour := []IsuCondition{}
 	timestampsInThisHour := []int64{}
-	var startTimeInThisHour time.Time
+	var startTimeInThisHour, zeroTime time.Time
+
 	var condition IsuCondition
 
 	endTime := graphDate.Add(time.Hour * 24)
@@ -801,7 +802,6 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 		return nil, fmt.Errorf("db error: %v", err)
 	}
 
-
 	if graphDate.Hour() != 0 {
 		fmt.Println("not exact day")
 		fmt.Printf("graph date: %s", graphDate.Format("2006-01-02 15:04:05"))
@@ -809,6 +809,7 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 	}
 
 	var rowCount = 0
+	minConditionCount := 1000
 	for rows.Next() {
 		rowCount++
 		err = rows.StructScan(&condition)
@@ -818,6 +819,9 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 
 		truncatedConditionTime := condition.Timestamp.Truncate(time.Hour)
 		if truncatedConditionTime != startTimeInThisHour {
+			if len(conditionsInThisHour) < minConditionCount && startTimeInThisHour != zeroTime {
+				minConditionCount = len(conditionsInThisHour)
+			}
 			if len(conditionsInThisHour) > 0 {
 				data, err := calculateGraphDataPoint(conditionsInThisHour)
 				if err != nil {
@@ -840,7 +844,7 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 		timestampsInThisHour = append(timestampsInThisHour, condition.Timestamp.Unix())
 	}
 
-	// fmt.Printf("graph row count %d\n", rowCount)
+	fmt.Printf("num datapoint %d, min : %d, total: %d\n", len(dataPoints), minConditionCount, rowCount)
 
 	if len(conditionsInThisHour) > 0 {
 		data, err := calculateGraphDataPoint(conditionsInThisHour)
@@ -856,9 +860,9 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 				ConditionTimestamps: timestampsInThisHour})
 	}
 
-
 	startIndex := len(dataPoints)
 	endNextIndex := len(dataPoints)
+
 	for i, graph := range dataPoints {
 		if startIndex == len(dataPoints) && !graph.StartAt.Before(graphDate) {
 			startIndex = i
@@ -1219,7 +1223,7 @@ func postIsuCondition(c echo.Context) error {
 	// fmt.Printf("postIsuConditionCount: %d\n", postIsuConditionCount)
 
 	// TODO: 一定割合リクエストを落としてしのぐようにしたが、本来は全量さばけるようにすべき
-	dropProbability := 0.9
+	dropProbability := 0.0
 	if rand.Float64() <= dropProbability {
 		c.Logger().Warnf("drop post isu condition request")
 		return c.NoContent(http.StatusAccepted)
