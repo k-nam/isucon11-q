@@ -1,6 +1,9 @@
 package main
 
-func addIsuConditionToPool(jiaUUID string, isSitting bool, condition string, msg string) {
+// isuUUID=>[]condition
+var currentHourConditions map[string][]IsuCondition
+
+func addIsuConditionToPool(isuID string, jiaUUID string, isSitting bool, condition string, msg string) {
 
 }
 

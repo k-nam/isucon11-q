@@ -1249,8 +1249,8 @@ func postIsuCondition(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	var isuId int
-	err = tx.Get(&isuId, "SELECT id FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
+	var isu Isu
+	err = tx.Get(&isu, "SELECT `id`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
 	if err != nil {
 		return c.String(http.StatusNotFound, "not found: isu")
 		// c.Logger().Errorf("db error: %v", err)
