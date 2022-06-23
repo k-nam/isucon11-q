@@ -1248,15 +1248,17 @@ func postIsuCondition(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	var isu Isu
-	err = tx.Get(&isu, "SELECT `id`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
-	if err != nil {
-		return c.String(http.StatusNotFound, "not found: isu")
-		// c.Logger().Errorf("db error: %v", err)
-		// return c.NoContent(http.StatusInternalServerError)
+	isu := getIsu(jiaIsuUUID)
+	if isu == nil {
+		var newIsu Isu
+		err = tx.Get(&newIsu, "SELECT `id`, `jia_isu_uuid`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
+		if err != nil {
+			return c.String(http.StatusNotFound, "not found: isu")
+		}
+
+		isu = &newIsu
+		addIsu(newIsu)
 	}
-	// if count == 0 {
-	// }
 
 	for _, cond := range req {
 		timestamp := time.Unix(cond.Timestamp, 0)
@@ -1291,6 +1293,7 @@ func postIsuCondition(c echo.Context) error {
 		// 	c.Logger().Errorf("db error: %v", err)
 		// 	return c.NoContent(http.StatusInternalServerError)
 		// }
+
 		if len(rowsToInsert) > 0 {
 			// fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
 			_, err = tx.NamedExec("INSERT INTO `isu_condition`"+
@@ -1302,7 +1305,6 @@ func postIsuCondition(c echo.Context) error {
 				return c.NoContent(http.StatusInternalServerError)
 			}
 		}
-
 	}
 	err = tx.Commit()
 	if err != nil {

@@ -40,3 +40,20 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 func getLatestCoditionForEachIsu() []IsuCondition {
 	return nil
 }
+
+var lock2 sync.Mutex
+
+var isus = map[string]*Isu{}
+
+func getIsu(uuid string) *Isu {
+	lock.Lock()
+	defer lock.Unlock()
+	result := isus[uuid]
+	return result
+}
+
+func addIsu(newIsu Isu) {
+	lock.Lock()
+	defer lock.Unlock()
+	isus[newIsu.JIAIsuUUID] = &newIsu
+}
