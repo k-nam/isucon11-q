@@ -1249,15 +1249,15 @@ func postIsuCondition(c echo.Context) error {
 	}
 	defer tx.Rollback()
 
-	var count int
-	err = tx.Get(&count, "SELECT COUNT(*) FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
+	var isuId int
+	err = tx.Get(&isuId, "SELECT id FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
 	if err != nil {
-		c.Logger().Errorf("db error: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	if count == 0 {
 		return c.String(http.StatusNotFound, "not found: isu")
+		// c.Logger().Errorf("db error: %v", err)
+		// return c.NoContent(http.StatusInternalServerError)
 	}
+	// if count == 0 {
+	// }
 
 	for _, cond := range req {
 		timestamp := time.Unix(cond.Timestamp, 0)
