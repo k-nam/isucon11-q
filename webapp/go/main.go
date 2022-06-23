@@ -780,7 +780,7 @@ func getIsuGraph(c echo.Context) error {
 		c.Logger().Errorf("db error: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-	c.Response().Header().Set("Cache-Control", "public, max-age=3153600000")
+	// c.Response().Header().Set("Cache-Control", "public, max-age=3153600000")
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -1107,7 +1107,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	time.Sleep(time.Millisecond * 1000)
+	// time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
@@ -1209,7 +1209,7 @@ func getTrend(c echo.Context) error {
 				Critical:  characterCriticalIsuConditions[character.Character],
 			})
 	}
-
+	// c.Response().Header().Set("Cache-Control", "public, max-age=3153600000")
 	return c.JSON(http.StatusOK, res)
 }
 

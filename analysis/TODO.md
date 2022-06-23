@@ -14,12 +14,12 @@
 - 2. 1 + Index in isu_condition + No select image in /api/isu : 16000
 - 3. 2 + Cache image (/icon)
 
-
 # Idea
-- (done) Use webserver cache
+- (done) Use Nginx cache for asset
 - Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
 - (done) Use WHERE for timestamp in /api/isu/graph
-- Bulk insert condition hourly
+- (done) Bulk insert condition hourly
+- Use Nginx cache for /api/trend
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.
