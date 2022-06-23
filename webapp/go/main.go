@@ -1266,6 +1266,10 @@ func postIsuCondition(c echo.Context) error {
 			return c.String(http.StatusBadRequest, "bad request body")
 		}
 
+		level, _ := calculateConditionLevel(cond.Condition)
+		if level == conditionLevelCritical {
+			continue
+		}
 		_, err = tx.Exec(
 			"INSERT INTO `isu_condition`"+
 				"	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
