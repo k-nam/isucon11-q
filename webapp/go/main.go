@@ -1127,37 +1127,39 @@ func getTrend(c echo.Context) error {
 	// 	return c.NoContent(http.StatusInternalServerError)
 	// }
 
-	for _, character := range characterList {
-		isuList := []Isu{}
-		err = db.Select(&isuList,
-			"SELECT id, jia_isu_uuid FROM `isu` WHERE `character` = ?",
-			character.Character,
-		)
-		if err != nil {
-			c.Logger().Errorf("db error: %v", err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+	// for _, character := range characterList {
+	// 	isuList := []Isu{}
+	// 	err = db.Select(&isuList,
+	// 		"SELECT id, jia_isu_uuid FROM `isu` WHERE `character` = ?",
+	// 		character.Character,
+	// 	)
+	// 	if err != nil {
+	// 		c.Logger().Errorf("db error: %v", err)
+	// 		return c.NoContent(http.StatusInternalServerError)
+	// 	}
 
-		for _, isu := range isuList {
-			conditions := []IsuCondition{}
-			err = db.Select(&conditions,
-				"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY timestamp DESC limit 1",
-				isu.JIAIsuUUID,
-			)
-			if err != nil {
-				c.Logger().Errorf("db error: %v", err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
+	// 	for _, isu := range isuList {
+	// 		conditions := []IsuCondition{}
+	// 		err = db.Select(&conditions,
+	// 			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY timestamp DESC limit 1",
+	// 			isu.JIAIsuUUID,
+	// 		)
+	// 		if err != nil {
+	// 			c.Logger().Errorf("db error: %v", err)
+	// 			return c.NoContent(http.StatusInternalServerError)
+	// 		}
 
-			if len(conditions) > 0 {
-				isuLastCondition := conditions[0]
+	// 		if len(conditions) > 0 {
+	// 			isuLastCondition := conditions[0]
 
-				isuLastCondition.Character = character.Character
-				isuLastCondition.IsuID = isu.ID
-				charIsuConditions = append(charIsuConditions, isuLastCondition)
-			}
-		}
-	}
+	// 			isuLastCondition.Character = character.Character
+	// 			isuLastCondition.IsuID = isu.ID
+	// 			charIsuConditions = append(charIsuConditions, isuLastCondition)
+	// 		}
+	// 	}
+	// }
+	fmt.Println("trend here")
+	charIsuConditions = getLatestConditions()
 
 	characterInfoIsuConditions := map[string][]*TrendCondition{}
 	characterWarningIsuConditions := map[string][]*TrendCondition{}

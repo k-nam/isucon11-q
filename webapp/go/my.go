@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -9,6 +10,7 @@ var lock sync.Mutex
 
 // isuUUID=>[]condition
 var currentHourConditions = map[string][]IsuCondition{}
+var latestConditions = map[string]IsuCondition{}
 
 // isuUUID=>current hour
 var currentHour = map[string]time.Time{}
@@ -17,6 +19,9 @@ var currentHour = map[string]time.Time{}
 func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	lock.Lock()
 	defer lock.Unlock()
+
+	latestConditions[cond.JIAIsuUUID] = cond
+
 	hour := cond.Timestamp.Truncate(time.Hour)
 	if hour == currentHour[cond.JIAIsuUUID] {
 		if len(currentHourConditions[cond.JIAIsuUUID]) > 10 {
@@ -37,8 +42,16 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	}
 }
 
-func getLatestCoditionForEachIsu() []IsuCondition {
-	return nil
+func getLatestConditions() []IsuCondition {
+	lock.Lock()
+	defer lock.Unlock()
+
+	conditions := []IsuCondition{}
+	for _, cond := range latestConditions {
+		conditions = append(conditions, cond)
+	}
+	fmt.Printf("trend len %d\n", len(conditions))
+	return conditions
 }
 
 var lock2 sync.Mutex
