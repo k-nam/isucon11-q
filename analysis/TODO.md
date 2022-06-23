@@ -21,6 +21,8 @@
 - (done) Bulk insert condition hourly
 - Use Nginx cache for /api/trend
 - Cache latest condition for GET /api/condition
+- Profile backend
+- Profile db
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.

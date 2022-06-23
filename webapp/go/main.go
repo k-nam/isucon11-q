@@ -333,6 +333,12 @@ func postInitialize(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	err = loadLatestConditionFromDb()
+	if err != nil {
+		c.Logger().Errorf("loadLatestConditionFromDb : %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
 	})
@@ -719,6 +725,8 @@ func getIsuIcon(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	c.Response().Header().Set("Cache-Control", "private, max-age=1000000")
+
 	return c.Blob(http.StatusOK, "", image)
 }
 
@@ -780,7 +788,7 @@ func getIsuGraph(c echo.Context) error {
 		c.Logger().Errorf("db error: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-	// c.Response().Header().Set("Cache-Control", "public, max-age=3153600000")
+
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -1107,7 +1115,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	// time.Sleep(time.Millisecond * 1000)
+	time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
@@ -1121,7 +1129,6 @@ func getTrend(c echo.Context) error {
 
 	// err = db.Select(&charIsuConditions2,
 	// 	"SELECT a.character, a.id as isu_id, b.id, b.timestamp, b.condition FROM isu a JOIN isu_condition b ON a.jia_isu_uuid = b.jia_isu_uuid WHERE b.timestamp = (SELECT timestamp FROM isu_condition WHERE jia_isu_uuid = a.jia_isu_uuid ORDER BY timestamp DESC limit 1)")
-
 	// if err != nil {
 	// 	c.Logger().Errorf("db error: %v", err)
 	// 	return c.NoContent(http.StatusInternalServerError)
@@ -1158,8 +1165,8 @@ func getTrend(c echo.Context) error {
 	// 		}
 	// 	}
 	// }
-	fmt.Println("trend here")
 	charIsuConditions = getLatestConditions()
+	// fmt.Printf("trend here, len: %d\n", len(charIsuConditions))
 
 	characterInfoIsuConditions := map[string][]*TrendCondition{}
 	characterWarningIsuConditions := map[string][]*TrendCondition{}
@@ -1211,7 +1218,7 @@ func getTrend(c echo.Context) error {
 				Critical:  characterCriticalIsuConditions[character.Character],
 			})
 	}
-	// c.Response().Header().Set("Cache-Control", "public, max-age=3153600000")
+	// c.Response().Header().Set("Cache-Control", "public, max-age=1")
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -1269,10 +1276,10 @@ func postIsuCondition(c echo.Context) error {
 			return c.String(http.StatusBadRequest, "bad request body")
 		}
 
-		level, _ := calculateConditionLevel(cond.Condition)
-		if level == conditionLevelCritical {
-			continue
-		}
+		// level, _ := calculateConditionLevel(cond.Condition)
+		// if level == conditionLevelCritical {
+		// 	continue
+		// }
 
 		isuCondition := IsuCondition{
 			JIAIsuUUID: jiaIsuUUID,
