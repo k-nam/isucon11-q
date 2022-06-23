@@ -844,8 +844,6 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 		timestampsInThisHour = append(timestampsInThisHour, condition.Timestamp.Unix())
 	}
 
-	fmt.Printf("num datapoint %d, min : %d, total: %d\n", len(dataPoints), minConditionCount, rowCount)
-
 	if len(conditionsInThisHour) > 0 {
 		data, err := calculateGraphDataPoint(conditionsInThisHour)
 		if err != nil {
@@ -859,6 +857,7 @@ func generateIsuGraphResponse(tx *sqlx.Tx, jiaIsuUUID string, graphDate time.Tim
 				Data:                data,
 				ConditionTimestamps: timestampsInThisHour})
 	}
+	// fmt.Printf("num datapoint %d, min : %d, total: %d\n", len(dataPoints), minConditionCount, rowCount)
 
 	startIndex := len(dataPoints)
 	endNextIndex := len(dataPoints)
@@ -1108,7 +1107,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
@@ -1293,7 +1292,7 @@ func postIsuCondition(c echo.Context) error {
 		// 	return c.NoContent(http.StatusInternalServerError)
 		// }
 		if len(rowsToInsert) > 0 {
-			fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
+			// fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
 			_, err = tx.NamedExec("INSERT INTO `isu_condition`"+
 				" (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
 				" VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition, :message)",

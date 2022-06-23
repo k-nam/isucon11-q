@@ -23,3 +23,9 @@
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.
+
+# Must do before end
+- Disable db log
+- Disable golang log
+- Disable nginx log
+- Check https://blog.recruit.co.jp/rtc/2021/04/26/isucon-2021-winter/

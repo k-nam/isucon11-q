@@ -9,21 +9,26 @@ var lock sync.Mutex
 
 // isuUUID=>[]condition
 var currentHourConditions = map[string][]IsuCondition{}
-var currentHour time.Time
+
+// isuUUID=>current hour
+var currentHour = map[string]time.Time{}
 
 // Returns rows to insert now
 func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	lock.Lock()
 	defer lock.Unlock()
 	hour := cond.Timestamp.Truncate(time.Hour)
-	if hour == currentHour {
+	if hour == currentHour[cond.JIAIsuUUID] {
+		if len(currentHourConditions[cond.JIAIsuUUID]) > 10 {
+			return nil
+		}
 		currentHourConditions[cond.JIAIsuUUID] = append(currentHourConditions[cond.JIAIsuUUID], cond)
 		// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
 		return nil
 	} else {
 		rowsToInsert := append([]IsuCondition{}, currentHourConditions[cond.JIAIsuUUID]...)
 
-		currentHour = hour
+		currentHour[cond.JIAIsuUUID] = hour
 		currentHourConditions[cond.JIAIsuUUID] = []IsuCondition{cond}
 
 		// fmt.Printf("was different len %d\n", len(rowsToInsert))
