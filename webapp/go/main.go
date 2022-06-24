@@ -1070,13 +1070,53 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 	conditions := []IsuCondition{}
 	var err error
 
-	if startTime.IsZero() {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime,
+	var conditionList []string
+	if conditionLevel["info"] != nil {
+		conditionList = append(conditionList,
+			"is_dirty=false,is_overweight=false,is_broken=false",
 		)
+	}
+	if conditionLevel["warning"] != nil {
+		conditionList = append(conditionList,
+			"is_dirty=false,is_overweight=false,is_broken=true",
+			"is_dirty=false,is_overweight=true,is_broken=false",
+			"is_dirty=false,is_overweight=true,is_broken=true",
+			"is_dirty=true,is_overweight=false,is_broken=false",
+			"is_dirty=true,is_overweight=false,is_broken=true",
+			"is_dirty=true,is_overweight=true,is_broken=false",
+		)
+	}
+	if conditionLevel["critical"] != nil {
+		conditionList = append(conditionList,
+			"is_dirty=true,is_overweight=true,is_broken=true",
+		)
+	}
+
+	if startTime.IsZero() {
+		var getSubquery = func(cond string) string {
+			return fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` = '%s' AND `timestamp` < '%s' ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, cond, endTime, limit)
+		}
+
+		subqueries := []string{}
+		for _, cond := range conditionList {
+			subqueries = append(subqueries, getSubquery(cond))
+		}
+
+		fullQuery := strings.Join(subqueries, " UNION ")
+
+		// fmt.Printf("%v", conditionLevel)
+		// fmt.Println(fullQuery)
+
+		// err = db.Select(&conditions,
+		// 	"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?	AND `timestamp` < ?"+
+		// 		" AND `condition` IN ()"+
+		// 		"	ORDER BY `timestamp` DESC",
+		// 	jiaIsuUUID, endTime,
+		// )
+		err = db.Select(&conditions, fullQuery)
+		sort.Slice(conditions, func(i, j int) bool {
+			return conditions[i].Timestamp.UnixNano() > conditions[j].Timestamp.UnixNano()
+		})
 	} else {
 		err = db.Select(&conditions,
 			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+

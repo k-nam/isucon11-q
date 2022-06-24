@@ -41,3 +41,4 @@ ALTER TABLE isu ADD CONSTRAINT `isu_user_id` FOREIGN KEY (jia_user_id) REFERENCE
 -- ALTER TABLE isu_condition ADD CONSTRAINT `isu_condition_isu_uuid` FOREIGN KEY (jia_isu_uuid) REFERENCES isu(jia_isu_uuid);
 
 ALTER TABLE isu_condition ADD INDEX `jia_isu_uuid_timestamp` (jia_isu_uuid, `timestamp` desc);
+ALTER TABLE isu_condition ADD INDEX `my` (`jia_isu_uuid`, `condition`, `timestamp` desc);

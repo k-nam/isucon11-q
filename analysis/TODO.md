@@ -27,6 +27,8 @@
 - Profile db
 - Use db connection pool
 - (Done) No use row.next() in getIsuGraph
+- Try dealing only with info level conditions
+
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.
