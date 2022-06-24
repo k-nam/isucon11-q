@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -207,8 +208,33 @@ func init() {
 		log.Fatalf("failed to parse ECDSA public key: %v", err)
 	}
 }
+func endMain() {
+	r := recover()
+	if r != nil {
+		fmt.Printf("recovered: %v", r)
+	}
+	fmt.Println("main end")
+	pprof.StopCPUProfile()
+}
 
 func main() {
+	var err error
+	fmt.Println("main start")
+	f, err := os.Create(time.Now().Format("150405.log"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
+
+	go func() {
+		var sec int64 = 80
+		fmt.Printf("Will stop profile in %d sec", sec)
+		time.Sleep(time.Duration(sec * int64(time.Second)))
+		fmt.Println("Now stop profile")
+		pprof.StopCPUProfile()
+	}()
+
+	defer endMain()
 	e := echo.New()
 	e.Debug = false
 	// e.Logger.SetLevel(log.ERROR)
@@ -240,7 +266,6 @@ func main() {
 
 	mySQLConnectionData = NewMySQLConnectionEnv()
 
-	var err error
 	db, err = mySQLConnectionData.ConnectDB()
 	if err != nil {
 		e.Logger.Fatalf("failed to connect db: %v", err)
@@ -1250,17 +1275,10 @@ func postIsuCondition(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "bad request body")
 	}
 
-	tx, err := db.Beginx()
-	if err != nil {
-		c.Logger().Errorf("db error: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	defer tx.Rollback()
-
 	isu := getIsu(jiaIsuUUID)
 	if isu == nil {
 		var newIsu Isu
-		err = tx.Get(&newIsu, "SELECT `id`, `jia_isu_uuid`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
+		err = db.Get(&newIsu, "SELECT `id`, `jia_isu_uuid`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
 		if err != nil {
 			return c.String(http.StatusNotFound, "not found: isu")
 		}
@@ -1304,8 +1322,15 @@ func postIsuCondition(c echo.Context) error {
 		// }
 
 		if len(rowsToInsert) > 0 {
+			// tx, err := db.Beginx()
+			// if err != nil {
+			// 	c.Logger().Errorf("db error: %v", err)
+			// 	return c.NoContent(http.StatusInternalServerError)
+			// }
+			// defer tx.Rollback()
+
 			// fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
-			_, err = tx.NamedExec("INSERT INTO `isu_condition`"+
+			_, err = db.NamedExec("INSERT INTO `isu_condition`"+
 				" (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
 				" VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition, :message)",
 				rowsToInsert)
@@ -1313,12 +1338,13 @@ func postIsuCondition(c echo.Context) error {
 				fmt.Printf("insert error %v", err)
 				return c.NoContent(http.StatusInternalServerError)
 			}
+
+			// err = tx.Commit()
+			// if err != nil {
+			// 	c.Logger().Errorf("db error: %v", err)
+			// 	return c.NoContent(http.StatusInternalServerError)
+			// }
 		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		c.Logger().Errorf("db error: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	return c.NoContent(http.StatusAccepted)
