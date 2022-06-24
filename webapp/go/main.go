@@ -1073,37 +1073,37 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 	var conditionList []string
 	if conditionLevel["info"] != nil {
 		conditionList = append(conditionList,
-			"is_dirty=false,is_overweight=false,is_broken=false",
+			"'is_dirty=false,is_overweight=false,is_broken=false'",
 		)
 	}
 	if conditionLevel["warning"] != nil {
 		conditionList = append(conditionList,
-			"is_dirty=false,is_overweight=false,is_broken=true",
-			"is_dirty=false,is_overweight=true,is_broken=false",
-			"is_dirty=false,is_overweight=true,is_broken=true",
-			"is_dirty=true,is_overweight=false,is_broken=false",
-			"is_dirty=true,is_overweight=false,is_broken=true",
-			"is_dirty=true,is_overweight=true,is_broken=false",
+			"'is_dirty=false,is_overweight=false,is_broken=true'",
+			"'is_dirty=false,is_overweight=true,is_broken=false'",
+			"'is_dirty=false,is_overweight=true,is_broken=true'",
+			"'is_dirty=true,is_overweight=false,is_broken=false'",
+			"'is_dirty=true,is_overweight=false,is_broken=true'",
+			"'is_dirty=true,is_overweight=true,is_broken=false'",
 		)
 	}
 	if conditionLevel["critical"] != nil {
 		conditionList = append(conditionList,
-			"is_dirty=true,is_overweight=true,is_broken=true",
+			"'is_dirty=true,is_overweight=true,is_broken=true'",
 		)
 	}
 
 	// if startTime.IsZero() {
-	var getSubquery = func(cond string) string {
-		return fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, cond, endTime, startTime, limit)
-	}
+	// var getSubquery = func(cond string) string {
+	// 	return fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, cond, endTime, startTime, limit)
+	// }
+	// subqueries := []string{}
+	// for _, cond := range conditionList {
+	// 	subqueries = append(subqueries, getSubquery(cond))
+	// }
+	// fullQuery := strings.Join(subqueries, " UNION ")
 
-	subqueries := []string{}
-	for _, cond := range conditionList {
-		subqueries = append(subqueries, getSubquery(cond))
-	}
-
-	fullQuery := strings.Join(subqueries, " UNION ")
-
+	conditionListString := strings.Join(conditionList, ",")
+	fullQuery := fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` IN ( %s ) AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, conditionListString, endTime, startTime, limit)
 	// fmt.Printf("%v", conditionLevel)
 	// fmt.Println(fullQuery)
 
