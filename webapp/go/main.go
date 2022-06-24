@@ -1092,40 +1092,40 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 		)
 	}
 
-	if startTime.IsZero() {
-		var getSubquery = func(cond string) string {
-			return fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` = '%s' AND `timestamp` < '%s' ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, cond, endTime, limit)
-		}
-
-		subqueries := []string{}
-		for _, cond := range conditionList {
-			subqueries = append(subqueries, getSubquery(cond))
-		}
-
-		fullQuery := strings.Join(subqueries, " UNION ")
-
-		// fmt.Printf("%v", conditionLevel)
-		// fmt.Println(fullQuery)
-
-		// err = db.Select(&conditions,
-		// 	"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?	AND `timestamp` < ?"+
-		// 		" AND `condition` IN ()"+
-		// 		"	ORDER BY `timestamp` DESC",
-		// 	jiaIsuUUID, endTime,
-		// )
-		err = db.Select(&conditions, fullQuery)
-		sort.Slice(conditions, func(i, j int) bool {
-			return conditions[i].Timestamp.UnixNano() > conditions[j].Timestamp.UnixNano()
-		})
-	} else {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	AND ? <= `timestamp`"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime, startTime,
-		)
+	// if startTime.IsZero() {
+	var getSubquery = func(cond string) string {
+		return fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, cond, endTime, startTime, limit)
 	}
+
+	subqueries := []string{}
+	for _, cond := range conditionList {
+		subqueries = append(subqueries, getSubquery(cond))
+	}
+
+	fullQuery := strings.Join(subqueries, " UNION ")
+
+	// fmt.Printf("%v", conditionLevel)
+	// fmt.Println(fullQuery)
+
+	// err = db.Select(&conditions,
+	// 	"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?	AND `timestamp` < ?"+
+	// 		" AND `condition` IN ()"+
+	// 		"	ORDER BY `timestamp` DESC",
+	// 	jiaIsuUUID, endTime,
+	// )
+	err = db.Select(&conditions, fullQuery)
+	sort.Slice(conditions, func(i, j int) bool {
+		return conditions[i].Timestamp.UnixNano() > conditions[j].Timestamp.UnixNano()
+	})
+	// } else {
+	// 	err = db.Select(&conditions,
+	// 		"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
+	// 			"	AND `timestamp` < ?"+
+	// 			"	AND ? <= `timestamp`"+
+	// 			"	ORDER BY `timestamp` DESC",
+	// 		jiaIsuUUID, endTime, startTime,
+	// 	)
+	// }
 	if err != nil {
 		return nil, fmt.Errorf("db error: %v", err)
 	}
@@ -1335,7 +1335,7 @@ func postIsuCondition(c echo.Context) error {
 		}
 
 		// level, _ := calculateConditionLevel(cond.Condition)
-		// if level == conditionLevelCritical {
+		// if level != conditionLevelInfo {
 		// 	continue
 		// }
 
