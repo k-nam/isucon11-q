@@ -23,10 +23,10 @@
 - (tested, This results in huge number of users) Use Nginx cache for /api/trend
 - (tested, same as above) Cache latest condition for GET /api/condition
 - Use limit 20 for each condition level in /api/condition
-- Profile backend
+- (Done) Profile backend
 - Profile db
 - Use db connection pool
-- No use row.next() in getIsuGraph
+- (Done) No use row.next() in getIsuGraph
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.

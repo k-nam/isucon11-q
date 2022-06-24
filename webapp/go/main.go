@@ -236,7 +236,7 @@ func main() {
 
 	defer endMain()
 	e := echo.New()
- 	// e.Debug = false
+	e.Debug = false
 	// e.Logger.SetLevel(log.ERROR)
 
 	// e.Use(middleware.Logger())
