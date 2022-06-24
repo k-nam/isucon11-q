@@ -14,6 +14,8 @@ var latestConditions = map[string]IsuCondition{}
 // isuUUID=>current hour
 var currentHour = map[string]time.Time{}
 
+var rowsToInsert []IsuCondition
+
 // Returns rows to insert now
 func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	lock.Lock()
@@ -32,14 +34,21 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 		// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
 		return nil
 	} else {
-		rowsToInsert := append([]IsuCondition{}, currentHourConditions[cond.JIAIsuUUID]...)
+		rows := append([]IsuCondition{}, currentHourConditions[cond.JIAIsuUUID]...)
 
 		currentHour[cond.JIAIsuUUID] = hour
 		currentHourConditions[cond.JIAIsuUUID] = []IsuCondition{cond}
 
 		// fmt.Printf("was different len %d\n", len(rowsToInsert))
+		rowsToInsert = append(rowsToInsert, rows...)
+		if len(rowsToInsert) > 1000 {
+			copy := rowsToInsert
+			rowsToInsert = []IsuCondition{}
+			return copy
+		} else{
+			return nil
+		}
 
-		return rowsToInsert
 	}
 }
 
