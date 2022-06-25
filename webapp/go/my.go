@@ -45,7 +45,7 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 			copy := rowsToInsert
 			rowsToInsert = []IsuCondition{}
 			return copy
-		} else{
+		} else {
 			return nil
 		}
 
@@ -64,15 +64,40 @@ func getLatestConditions() []IsuCondition {
 	return conditions
 }
 
+func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
+	lock.Lock()
+	defer lock.Unlock()
+
+	result := map[string]IsuCondition{}
+	for isuUUID, cond := range latestConditions {
+		// if cond.UserId == userId {
+		result[isuUUID] = cond
+		// }
+	}
+	return result
+}
+
 var lock2 sync.Mutex
 
-var isus = map[string]*Isu{}
+var isus = map[string]Isu{}
 
 func getIsu(uuid string) *Isu {
 	lock.Lock()
 	defer lock.Unlock()
 	result := isus[uuid]
-	return result
+	return &result
+}
+
+func getIsusForUser(userId string) []Isu {
+	lock.Lock()
+	defer lock.Unlock()
+	isuList := []Isu{}
+	for _, isu := range isus {
+		if isu.JIAUserID == userId {
+			isuList = append(isuList, isu)
+		}
+	}
+	return isuList
 }
 
 func loadLatestConditionFromDb() error {
@@ -82,7 +107,7 @@ func loadLatestConditionFromDb() error {
 	conds := []IsuCondition{}
 
 	err := db.Select(&conds,
-		"SELECT a.character, a.id as isu_id, b.id, b.timestamp, b.condition, b.jia_isu_uuid FROM isu a INNER JOIN isu_condition b ON a.jia_isu_uuid = b.jia_isu_uuid WHERE b.timestamp = (SELECT timestamp FROM isu_condition WHERE jia_isu_uuid = a.jia_isu_uuid ORDER BY timestamp DESC limit 1)")
+		"SELECT a.character, a.id as isu_id, a.jia_user_id, b.id, b.message, b.timestamp, b.condition, b.jia_isu_uuid, b.is_sitting, b.created_at FROM isu a INNER JOIN isu_condition b ON a.jia_isu_uuid = b.jia_isu_uuid WHERE b.timestamp = (SELECT timestamp FROM isu_condition WHERE jia_isu_uuid = a.jia_isu_uuid ORDER BY timestamp DESC limit 1)")
 	if err != nil {
 		return err
 	}
@@ -98,5 +123,5 @@ func loadLatestConditionFromDb() error {
 func addIsu(newIsu Isu) {
 	lock.Lock()
 	defer lock.Unlock()
-	isus[newIsu.JIAIsuUUID] = &newIsu
+	isus[newIsu.JIAIsuUUID] = newIsu
 }

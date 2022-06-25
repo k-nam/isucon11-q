@@ -91,6 +91,7 @@ type IsuCondition struct {
 	CreatedAt  time.Time `db:"created_at"`
 	Character  string    `db:"character"`
 	IsuID      int       `db:"isu_id"`
+	UserId     string    `db:"jia_user_id"`
 }
 
 type MySQLConnectionEnv struct {
@@ -485,41 +486,33 @@ func getIsuList(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	tx, err := db.Beginx()
-	if err != nil {
-		c.Logger().Errorf("db error: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	defer tx.Rollback()
+	// tx, err := db.Beginx()
+	// if err != nil {
+	// 	c.Logger().Errorf("db error: %v", err)
+	// 	return c.NoContent(http.StatusInternalServerError)
+	// }
+	// defer tx.Rollback()
 
 	isuList := []Isu{}
-	err = tx.Select(
+	err = db.Select(
 		&isuList,
-		"SELECT `id`, `jia_isu_uuid`, `name`, `character` FROM `isu` WHERE `jia_user_id` = ? ORDER BY `id` DESC",
+		"SELECT `id`, `jia_isu_uuid`, `name`, `character`, `jia_user_id` FROM `isu` WHERE `jia_user_id` = ? ORDER BY `id` DESC",
 		jiaUserID)
 	if err != nil {
 		c.Logger().Errorf("db error: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	isuConditionMap := getLatestConditionsAsMap(jiaUserID)
+	// fmt.Printf("%v\n", isuConditionMap)
 	responseList := []GetIsuListResponse{}
 	for _, isu := range isuList {
-		var lastCondition IsuCondition
-		foundLastCondition := true
-		err = tx.Get(&lastCondition, "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? ORDER BY `timestamp` DESC LIMIT 1",
-			isu.JIAIsuUUID)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-
-				foundLastCondition = false
-			} else {
-				c.Logger().Errorf("db error: %v", err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
-		}
+		// fmt.Printf("User id %s , isu id %s\n", isu.JIAUserID, isu.JIAIsuUUID)
+		lastCondition, ok := isuConditionMap[isu.JIAIsuUUID]
 
 		var formattedCondition *GetIsuConditionResponse
-		if foundLastCondition {
+		if ok {
+			// fmt.Printf("%v\n", lastCondition)
 			conditionLevel, err := calculateConditionLevel(lastCondition.Condition)
 			if err != nil {
 				c.Logger().Error(err)
@@ -535,6 +528,8 @@ func getIsuList(c echo.Context) error {
 				ConditionLevel: conditionLevel,
 				Message:        lastCondition.Message,
 			}
+		} else {
+			fmt.Println("not found")
 		}
 
 		res := GetIsuListResponse{
@@ -546,11 +541,11 @@ func getIsuList(c echo.Context) error {
 		responseList = append(responseList, res)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		c.Logger().Errorf("db error: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
+	// err = tx.Commit()
+	// if err != nil {
+	// 	c.Logger().Errorf("db error: %v", err)
+	// 	return c.NoContent(http.StatusInternalServerError)
+	// }
 
 	return c.JSON(http.StatusOK, responseList)
 }
@@ -1347,6 +1342,7 @@ func postIsuCondition(c echo.Context) error {
 			Message:    cond.Message,
 			Character:  isu.Character,
 			IsuID:      isu.ID,
+			UserId:     isu.JIAUserID,
 		}
 
 		rowsToInsert := addIsuConditionToPool(isuCondition)

@@ -16,18 +16,18 @@
 
 # Idea
 - (done, highly effective) Use Nginx cache for asset and/or set Cache-Control header
-- Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
-- (done, highly effective) Use WHERE for timestamp in /api/isu/graph
-- (done, highly effective) Bulk insert condition hourly
+- (Done, cannot pass benchmark when I change table schema) Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
+- (Done, highly effective) Use WHERE for timestamp in /api/isu/graph
+- (Done, highly effective) Bulk insert condition hourly
 - Bulk insert in larger chunk to deal with more users
 - (tested, This results in huge number of users) Use Nginx cache for /api/trend
 - (tested, same as above) Cache latest condition for GET /api/condition
-- Use limit 20 for each condition level in /api/condition
+- (Done, highly effective) Use WHERE IN for condition in /api/condition
 - (Done) Profile backend
 - Profile db
 - Use db connection pool
-- (Done) No use row.next() in getIsuGraph
-- Try dealing only with info level conditions
+- (Done, no effect) No use row.next() in getIsuGraph
+- (Done, NG) Try dealing only with info level conditions
 
 
 # Bug note
