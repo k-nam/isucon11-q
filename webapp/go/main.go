@@ -527,7 +527,7 @@ func getIsuList(c echo.Context) error {
 				Message:        lastCondition.Message,
 			}
 		} else {
-			fmt.Println("not found")
+			// fmt.Println("not found")
 		}
 
 		res := GetIsuListResponse{
@@ -1164,7 +1164,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	time.Sleep(time.Millisecond * 900)
+	time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
@@ -1299,16 +1299,16 @@ func postIsuCondition(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "bad request body")
 	}
 
-	isu := getIsu(jiaIsuUUID)
-	if isu == nil {
+	isu, ok := getIsu(jiaIsuUUID)
+	if !ok {
 		var newIsu Isu
-		err = db.Get(&newIsu, "SELECT `id`, `jia_isu_uuid`, `character` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
+		err = db.Get(&newIsu, "SELECT `id`, `jia_isu_uuid`, `character`, `jia_user_id` FROM `isu` WHERE `jia_isu_uuid` = ?", jiaIsuUUID)
 		if err != nil {
 			return c.String(http.StatusNotFound, "not found: isu")
 		}
-
-		isu = &newIsu
-		addIsu(newIsu)
+		// fmt.Printf("Add cond %v\n", isu)
+		isu = newIsu
+		addIsu(isu)
 	}
 
 	for _, cond := range req {
