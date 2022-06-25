@@ -25,7 +25,7 @@
 - (Done, highly effective) Use WHERE IN for condition in /api/condition
 - (Done) Profile backend
 - Profile db
-- Use db connection pool
+- (Skipped, already implemented) Use db connection pool
 - (Done, no effect) No use row.next() in getIsuGraph
 - (Done, NG) Try dealing only with info level conditions
 - (Done, highly effective) Use cached latestCondition in getIsuList
