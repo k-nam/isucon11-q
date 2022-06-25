@@ -22,12 +22,13 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	defer lock.Unlock()
 
 	if cond.Timestamp.After(latestConditions[cond.JIAIsuUUID].Timestamp) {
+		// fmt.Printf("refresh for: %s", cond.JIAIsuUUID)
 		latestConditions[cond.JIAIsuUUID] = cond
 	}
 
 	hour := cond.Timestamp.Truncate(time.Hour)
 	if hour == currentHour[cond.JIAIsuUUID] {
-		if len(currentHourConditions[cond.JIAIsuUUID]) > 5 {
+		if len(currentHourConditions[cond.JIAIsuUUID]) > 10 {
 			return nil
 		}
 		currentHourConditions[cond.JIAIsuUUID] = append(currentHourConditions[cond.JIAIsuUUID], cond)
@@ -60,7 +61,7 @@ func getLatestConditions() []IsuCondition {
 	for _, cond := range latestConditions {
 		conditions = append(conditions, cond)
 	}
-	// fmt.Printf("trend len %d\n", len(latestConditions))
+	// fmt.Printf("trend len %d\n", len(conditions))
 	return conditions
 }
 
