@@ -22,7 +22,7 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 	defer lock.Unlock()
 
 	if cond.Timestamp.After(latestConditions[cond.JIAIsuUUID].Timestamp) {
-		// fmt.Printf("refresh for: %s", cond.JIAIsuUUID)
+		// fmt.Printf("refresh for: %s\n", cond.UserId)
 		latestConditions[cond.JIAIsuUUID] = cond
 	}
 
@@ -71,34 +71,42 @@ func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
 
 	result := map[string]IsuCondition{}
 	for isuUUID, cond := range latestConditions {
-		// if cond.UserId == userId {
-		result[isuUUID] = cond
-		// }
+		// fmt.Printf("%s , %s\n", cond.UserId, userId)
+		if cond.UserId == userId {
+			result[isuUUID] = cond
+		}
 	}
 	return result
 }
 
 var lock2 sync.Mutex
 
-var isus = map[string]Isu{}
+var isusCache = map[string]Isu{}
 
-func getIsu(uuid string) *Isu {
-	lock.Lock()
-	defer lock.Unlock()
-	result := isus[uuid]
-	return &result
+func getIsu(uuid string) (Isu, bool) {
+	lock2.Lock()
+	defer lock2.Unlock()
+	isu, ok := isusCache[uuid]
+	return isu, ok
 }
 
 func getIsusForUser(userId string) []Isu {
-	lock.Lock()
-	defer lock.Unlock()
+	lock2.Lock()
+	defer lock2.Unlock()
 	isuList := []Isu{}
-	for _, isu := range isus {
+	for _, isu := range isusCache {
+		// fmt.Printf("%s, %s\n", isu.JIAUserID, userId)
 		if isu.JIAUserID == userId {
 			isuList = append(isuList, isu)
 		}
 	}
 	return isuList
+}
+
+func addIsu(newIsu Isu) {
+	lock2.Lock()
+	defer lock2.Unlock()
+	isusCache[newIsu.JIAIsuUUID] = newIsu
 }
 
 func loadLatestConditionFromDb() error {
@@ -115,16 +123,10 @@ func loadLatestConditionFromDb() error {
 
 	for _, cond := range conds {
 		latestConditions[cond.JIAIsuUUID] = cond
-		// fmt.Printf("loading cond: %v", cond)
+		// fmt.Printf("loading cond: %v\n", cond.UserId)
 	}
 	// fmt.Printf("loaded # : %d\n", len(latestConditions))
 	return nil
-}
-
-func addIsu(newIsu Isu) {
-	lock.Lock()
-	defer lock.Unlock()
-	isus[newIsu.JIAIsuUUID] = newIsu
 }
 
 var users = map[string]bool{}
