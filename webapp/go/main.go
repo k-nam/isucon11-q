@@ -810,7 +810,7 @@ func generateIsuGraphResponse(jiaIsuUUID string, graphDate time.Time) ([]GraphRe
 	endTime := graphDate.Add(time.Hour * 24)
 	start := graphDate.Format("2006-01-02 15:04:05")
 	end := endTime.Format("2006-01-02 15:04:05")
-	rows, err := db.Queryx("SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` >= ? AND `timestamp` < ? ORDER BY `timestamp` ASC", jiaIsuUUID, start, end)
+	rows, err := db.Queryx("SELECT `condition`, `is_sitting`, `timestamp` FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` >= ? AND `timestamp` < ? ORDER BY `timestamp` ASC", jiaIsuUUID, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("db error: %v", err)
 	}
