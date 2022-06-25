@@ -125,3 +125,25 @@ func addIsu(newIsu Isu) {
 	defer lock.Unlock()
 	isus[newIsu.JIAIsuUUID] = newIsu
 }
+
+var users = map[string]bool{}
+var usersLock = sync.Mutex{}
+
+func checkUser(userId string) (bool, error) {
+	usersLock.Lock()
+	defer usersLock.Unlock()
+
+	if val, ok := users[userId]; ok {
+		return val, nil
+	} else {
+		count := 0
+		err := db.Get(&count, "SELECT COUNT(*) FROM `user` WHERE `jia_user_id` = ?",
+			userId)
+		if err != nil {
+			return false, err
+		}
+
+		users[userId] = count > 0
+		return users[userId], nil
+	}
+}
