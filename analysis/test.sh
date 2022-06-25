@@ -18,3 +18,4 @@ docker compose -f docker-compose-bench.yml cp nginx:/var/log/nginx/access.log $D
 docker compose -f docker-compose-bench.yml cp mysql-backend:/var/log/mysql/mariadb-slow.log $DIR/slowquery.log
 
 cat $DIR/nginx.log | alp ltsv --sort sum -r -m '^/api/condition/.*$','^/api/isu/.+/icon$','^/api/isu/.+/graph$','^/assets/.*$','^/api/isu$','^/api/trend$','^/api/isu/.+','^/isu/.*' > $DIR/alp_result.log
+pt-query-digest $DIR/slowquery.log > $DIR/pt_query.log

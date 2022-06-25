@@ -29,7 +29,8 @@
 - (Done, no effect) No use row.next() in getIsuGraph
 - (Done, NG) Try dealing only with info level conditions
 - (Done, highly effective) Use cached latestCondition in getIsuList
-
+- (Done, highly effective) Cache users in getUserFromSession
+- ( ) Make isu_condition table's index more effective by compress condition column
 
 # Bug note
 - Setting `POST_ISUCONDITION_TARGET_BASE_URL` to port 3001 resulted in 0 score. I must set `ISUXBENCH_ALL_ADDRESSES` to nginx, too.
