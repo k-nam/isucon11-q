@@ -1084,6 +1084,10 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 
 	conditionListString := strings.Join(conditionList, ",")
 	fullQuery := fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` IN ( %s ) AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, conditionListString, endTime, startTime, limit)
+
+	if len(conditionList) == 3 {
+		fullQuery = fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, endTime, startTime, limit)
+	}
 	// fmt.Printf("%v", conditionLevel)
 	// fmt.Println(fullQuery)
 
