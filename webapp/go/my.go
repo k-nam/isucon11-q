@@ -5,40 +5,70 @@ import (
 	"time"
 )
 
-var lock sync.Mutex
-
 // isuUUID=>[]condition
-var currentHourConditions = map[string][]IsuCondition{}
-var latestConditions = map[string]IsuCondition{}
+var currentHourCond = map[string][]IsuCondition{}
+var currentHourCondLock sync.Mutex
+var latestCond = map[string]IsuCondition{}
+var latestCondLock sync.Mutex
 
 // isuUUID=>current hour
 var currentHour = map[string]time.Time{}
 
 var rowsToInsert []IsuCondition
 
+func refreshLatestCondition(cond IsuCondition) {
+	latestCondLock.Lock()
+	defer latestCondLock.Unlock()
+	if cond.Timestamp.After(latestCond[cond.JIAIsuUUID].Timestamp) {
+		// fmt.Printf("refresh for: %s\n", cond.UserId)
+		latestCond[cond.JIAIsuUUID] = cond
+	}
+}
+
+func getLatestConditions() []IsuCondition {
+	latestCondLock.Lock()
+	defer latestCondLock.Unlock()
+
+	conditions := []IsuCondition{}
+	for _, cond := range latestCond {
+		conditions = append(conditions, cond)
+	}
+	// fmt.Printf("trend len %d\n", len(conditions))
+	return conditions
+}
+
+func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
+	latestCondLock.Lock()
+	defer latestCondLock.Unlock()
+
+	result := map[string]IsuCondition{}
+	for isuUUID, cond := range latestCond {
+		// fmt.Printf("%s , %s\n", cond.UserId, userId)
+		if cond.UserId == userId {
+			result[isuUUID] = cond
+		}
+	}
+	return result
+}
+
 // Returns rows to insert now
 func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if cond.Timestamp.After(latestConditions[cond.JIAIsuUUID].Timestamp) {
-		// fmt.Printf("refresh for: %s\n", cond.UserId)
-		latestConditions[cond.JIAIsuUUID] = cond
-	}
+	currentHourCondLock.Lock()
+	defer currentHourCondLock.Unlock()
 
 	hour := cond.Timestamp.Truncate(time.Hour)
 	if hour == currentHour[cond.JIAIsuUUID] {
-		if len(currentHourConditions[cond.JIAIsuUUID]) > 10 {
+		if len(currentHourCond[cond.JIAIsuUUID]) > 10 {
 			return nil
 		}
-		currentHourConditions[cond.JIAIsuUUID] = append(currentHourConditions[cond.JIAIsuUUID], cond)
+		currentHourCond[cond.JIAIsuUUID] = append(currentHourCond[cond.JIAIsuUUID], cond)
 		// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
 		return nil
 	} else {
-		rows := append([]IsuCondition{}, currentHourConditions[cond.JIAIsuUUID]...)
+		rows := append([]IsuCondition{}, currentHourCond[cond.JIAIsuUUID]...)
 
 		currentHour[cond.JIAIsuUUID] = hour
-		currentHourConditions[cond.JIAIsuUUID] = []IsuCondition{cond}
+		currentHourCond[cond.JIAIsuUUID] = []IsuCondition{cond}
 
 		// fmt.Printf("was different len %d\n", len(rowsToInsert))
 		rowsToInsert = append(rowsToInsert, rows...)
@@ -49,50 +79,23 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 		} else {
 			return nil
 		}
-
 	}
 }
 
-func getLatestConditions() []IsuCondition {
-	lock.Lock()
-	defer lock.Unlock()
-
-	conditions := []IsuCondition{}
-	for _, cond := range latestConditions {
-		conditions = append(conditions, cond)
-	}
-	// fmt.Printf("trend len %d\n", len(conditions))
-	return conditions
-}
-
-func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
-	lock.Lock()
-	defer lock.Unlock()
-
-	result := map[string]IsuCondition{}
-	for isuUUID, cond := range latestConditions {
-		// fmt.Printf("%s , %s\n", cond.UserId, userId)
-		if cond.UserId == userId {
-			result[isuUUID] = cond
-		}
-	}
-	return result
-}
-
-var lock2 sync.Mutex
+var isusCacheLock sync.Mutex
 
 var isusCache = map[string]Isu{}
 
 func getIsu(uuid string) (Isu, bool) {
-	lock2.Lock()
-	defer lock2.Unlock()
+	isusCacheLock.Lock()
+	defer isusCacheLock.Unlock()
 	isu, ok := isusCache[uuid]
 	return isu, ok
 }
 
 func getIsusForUser(userId string) []Isu {
-	lock2.Lock()
-	defer lock2.Unlock()
+	isusCacheLock.Lock()
+	defer isusCacheLock.Unlock()
 	isuList := []Isu{}
 	for _, isu := range isusCache {
 		// fmt.Printf("%s, %s\n", isu.JIAUserID, userId)
@@ -104,14 +107,14 @@ func getIsusForUser(userId string) []Isu {
 }
 
 func addIsu(newIsu Isu) {
-	lock2.Lock()
-	defer lock2.Unlock()
+	isusCacheLock.Lock()
+	defer isusCacheLock.Unlock()
 	isusCache[newIsu.JIAIsuUUID] = newIsu
 }
 
 func loadLatestConditionFromDb() error {
 	// fmt.Println("loadLatestConditionFromDb")
-	latestConditions = map[string]IsuCondition{}
+	latestCond = map[string]IsuCondition{}
 
 	conds := []IsuCondition{}
 
@@ -122,7 +125,7 @@ func loadLatestConditionFromDb() error {
 	}
 
 	for _, cond := range conds {
-		latestConditions[cond.JIAIsuUUID] = cond
+		latestCond[cond.JIAIsuUUID] = cond
 		// fmt.Printf("loading cond: %v\n", cond.UserId)
 	}
 	// fmt.Printf("loaded # : %d\n", len(latestConditions))
