@@ -1006,9 +1006,9 @@ func getIsuConditions(c echo.Context) error {
 	if conditionLevelCSV == "" {
 		return c.String(http.StatusBadRequest, "missing: condition_level")
 	}
-	conditionLevel := map[string]interface{}{}
+	conditionLevel := map[string]bool{}
 	for _, level := range strings.Split(conditionLevelCSV, ",") {
-		conditionLevel[level] = struct{}{}
+		conditionLevel[level] = true
 	}
 
 	startTimeStr := c.QueryParam("start_time")
@@ -1035,7 +1035,7 @@ func getIsuConditions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	conditionsResponse, err := getIsuConditionsFromDB(db, jiaIsuUUID, endTime, conditionLevel, startTime, conditionLimit, isuName)
+	conditionsResponse, err := getIsuConditionsFromDB(jiaIsuUUID, endTime, conditionLevel, startTime, conditionLimit, isuName)
 	if err != nil {
 		c.Logger().Errorf("db error: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
@@ -1044,19 +1044,19 @@ func getIsuConditions(c echo.Context) error {
 }
 
 // ISUのコンディションをDBから取得
-func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, conditionLevel map[string]interface{}, startTime time.Time,
+func getIsuConditionsFromDB(jiaIsuUUID string, endTime time.Time, conditionLevel map[string]bool, startTime time.Time,
 	limit int, isuName string) ([]*GetIsuConditionResponse, error) {
 
 	conditions := []IsuCondition{}
 	var err error
 
 	var conditionList []string
-	if conditionLevel["info"] != nil {
+	if conditionLevel["info"] {
 		conditionList = append(conditionList,
 			"'is_dirty=false,is_overweight=false,is_broken=false'",
 		)
 	}
-	if conditionLevel["warning"] != nil {
+	if conditionLevel["warning"] {
 		conditionList = append(conditionList,
 			"'is_dirty=false,is_overweight=false,is_broken=true'",
 			"'is_dirty=false,is_overweight=true,is_broken=false'",
@@ -1066,7 +1066,7 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 			"'is_dirty=true,is_overweight=true,is_broken=false'",
 		)
 	}
-	if conditionLevel["critical"] != nil {
+	if conditionLevel["critical"] {
 		conditionList = append(conditionList,
 			"'is_dirty=true,is_overweight=true,is_broken=true'",
 		)
@@ -1085,7 +1085,7 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 	conditionListString := strings.Join(conditionList, ",")
 	fullQuery := fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` IN ( %s ) AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, conditionListString, endTime, startTime, limit)
 
-	if len(conditionList) == 3 {
+	if len(conditionList) == 8 {
 		fullQuery = fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, endTime, startTime, limit)
 	}
 	// fmt.Printf("%v", conditionLevel)
@@ -1164,7 +1164,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	// time.Sleep(time.Millisecond * 1000)
+	time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")

@@ -25,16 +25,24 @@ func refreshLatestCondition(cond IsuCondition) {
 	}
 }
 
+var recentLatestCondition time.Time
+var cachedLatestConditionResponse = []IsuCondition{}
+
 func getLatestConditions() []IsuCondition {
+	if time.Now().Before(recentLatestCondition.Add(500 * time.Millisecond)) {
+		return cachedLatestConditionResponse
+	}
+
 	latestCondLock.Lock()
 	defer latestCondLock.Unlock()
 
-	conditions := []IsuCondition{}
+	newResponse := []IsuCondition{}
 	for _, cond := range latestCond {
-		conditions = append(conditions, cond)
+		newResponse = append(newResponse, cond)
 	}
-	// fmt.Printf("trend len %d\n", len(conditions))
-	return conditions
+	cachedLatestConditionResponse = newResponse
+	// fmt.Printf("trend len %d\n", len(cachedLatestConditionResponse))
+	return cachedLatestConditionResponse
 }
 
 func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
