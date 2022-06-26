@@ -872,22 +872,22 @@ func generateIsuGraphResponse(jiaIsuUUID string, graphDate time.Time) ([]GraphRe
 	}
 	// fmt.Printf("num datapoint %d, min : %d, total: %d\n", len(dataPoints), minConditionCount, rowCount)
 
-	startIndex := len(dataPoints)
-	endNextIndex := len(dataPoints)
+	// startIndex := len(dataPoints)
+	// endNextIndex := len(dataPoints)
 
-	for i, graph := range dataPoints {
-		if startIndex == len(dataPoints) && !graph.StartAt.Before(graphDate) {
-			startIndex = i
-		}
-		if endNextIndex == len(dataPoints) && graph.StartAt.After(endTime) {
-			endNextIndex = i
-		}
-	}
+	// for i, graph := range dataPoints {
+	// 	if startIndex == len(dataPoints) && !graph.StartAt.Before(graphDate) {
+	// 		startIndex = i
+	// 	}
+	// 	if endNextIndex == len(dataPoints) && graph.StartAt.After(endTime) {
+	// 		endNextIndex = i
+	// 	}
+	// }
 
 	filteredDataPoints := dataPoints
-	if startIndex < endNextIndex {
-		filteredDataPoints = dataPoints[startIndex:endNextIndex]
-	}
+	// if startIndex < endNextIndex {
+	// 	filteredDataPoints = dataPoints[startIndex:endNextIndex]
+	// }
 
 	responseList := []GraphResponse{}
 	index := 0
