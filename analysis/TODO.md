@@ -9,27 +9,29 @@
 - 25 distinct characters
 - isu_condition timestamp format: '2021-08-10 20:07:03'
 
-# Score
-- 1. Default 3000
-- 2. 1 + Index in isu_condition + No select image in /api/isu : 16000
-- 3. 2 + Cache image (/icon)
-
-# Idea
+# Idea (easy)
 - (done, highly effective) Use Nginx cache for asset and/or set Cache-Control header
-- (Done, cannot pass benchmark when I change table schema) Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
 - (Done, highly effective) Use WHERE for timestamp in /api/isu/graph
+- (Done, highly effective) Use WHERE IN for condition in /api/condition
+
+# Using memory
 - (Done, highly effective) Bulk insert condition hourly
-- Bulk insert in larger chunk to deal with more users
+- (Done, highly effective) Use cached latestCondition in getIsuList
+- (Done, highly effective) Cache users in getUserFromSession
+
+# Can't use
+- (Done, cannot pass benchmark when I change table schema) Make conditionLevel separate row. Use WHERE IN clause for /api/condition/xxx
 - (tested, This results in huge number of users) Use Nginx cache for /api/trend
 - (tested, same as above) Cache latest condition for GET /api/condition
-- (Done, highly effective) Use WHERE IN for condition in /api/condition
+
+# Chores
 - (Done) Profile backend
-- Profile db
+- (Done) Profile db
 - (Skipped, already implemented) Use db connection pool
 - (Done, no effect) No use row.next() in getIsuGraph
 - (Done, NG) Try dealing only with info level conditions
-- (Done, highly effective) Use cached latestCondition in getIsuList
-- (Done, highly effective) Cache users in getUserFromSession
+
+# TODO
 - ( ) Make isu_condition table's index more effective by compress condition column
 
 # Bug note
