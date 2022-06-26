@@ -884,7 +884,7 @@ func generateIsuGraphResponse(jiaIsuUUID string, graphDate time.Time) ([]GraphRe
 		}
 	}
 
-	filteredDataPoints := []GraphDataPointWithInfo{}
+	filteredDataPoints := dataPoints
 	if startIndex < endNextIndex {
 		filteredDataPoints = dataPoints[startIndex:endNextIndex]
 	}
@@ -1164,7 +1164,7 @@ func calculateConditionLevel(condition string) (string, error) {
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
 func getTrend(c echo.Context) error {
-	time.Sleep(time.Millisecond * 1200)
+	time.Sleep(time.Millisecond * 1000)
 
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
@@ -1311,6 +1311,8 @@ func postIsuCondition(c echo.Context) error {
 		addIsu(isu)
 	}
 
+	conditions := []IsuCondition{}
+
 	for _, cond := range req {
 		timestamp := time.Unix(cond.Timestamp, 0)
 
@@ -1333,44 +1335,22 @@ func postIsuCondition(c echo.Context) error {
 			IsuID:      isu.ID,
 			UserId:     isu.JIAUserID,
 		}
+		conditions = append(conditions, isuCondition)
+	}
 
-		refreshLatestCondition(isuCondition)
+	refreshLatestCondition(conditions)
 
-		rowsToInsert := addIsuConditionToPool(isuCondition)
+	rowsToInsert := addIsuConditionToPool(conditions)
 
-		// _, err = tx.Exec(
-		// 	"INSERT INTO `isu_condition`"+
-		// 		"	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
-		// 		"	VALUES (?, ?, ?, ?, ?)",
-		// 	jiaIsuUUID, timestamp, cond.IsSitting, cond.Condition, cond.Message)
-		// if err != nil {
-		// 	c.Logger().Errorf("db error: %v", err)
-		// 	return c.NoContent(http.StatusInternalServerError)
-		// }
-
-		if len(rowsToInsert) > 0 {
-			// tx, err := db.Beginx()
-			// if err != nil {
-			// 	c.Logger().Errorf("db error: %v", err)
-			// 	return c.NoContent(http.StatusInternalServerError)
-			// }
-			// defer tx.Rollback()
-
-			// fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
-			_, err = db.NamedExec("INSERT INTO `isu_condition`"+
-				" (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
-				" VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition, :message)",
-				rowsToInsert)
-			if err != nil {
-				fmt.Printf("insert error %v", err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
-
-			// err = tx.Commit()
-			// if err != nil {
-			// 	c.Logger().Errorf("db error: %v", err)
-			// 	return c.NoContent(http.StatusInternalServerError)
-			// }
+	if len(rowsToInsert) > 0 {
+		// fmt.Printf("Inserting %d rows\n", len(rowsToInsert))
+		_, err = db.NamedExec("INSERT INTO `isu_condition`"+
+			" (`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
+			" VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition, :message)",
+			rowsToInsert)
+		if err != nil {
+			fmt.Printf("insert error %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
 	}
 

@@ -16,12 +16,14 @@ var currentHour = map[string]time.Time{}
 
 var rowsToInsert []IsuCondition
 
-func refreshLatestCondition(cond IsuCondition) {
+func refreshLatestCondition(conds []IsuCondition) {
 	latestCondLock.Lock()
 	defer latestCondLock.Unlock()
-	if cond.Timestamp.After(latestCond[cond.JIAIsuUUID].Timestamp) {
-		// fmt.Printf("refresh for: %s\n", cond.UserId)
-		latestCond[cond.JIAIsuUUID] = cond
+	for _, cond := range conds {
+		if cond.Timestamp.After(latestCond[cond.JIAIsuUUID].Timestamp) {
+			// fmt.Printf("refresh for: %s\n", cond.UserId)
+			latestCond[cond.JIAIsuUUID] = cond
+		}
 	}
 }
 
@@ -60,33 +62,32 @@ func getLatestConditionsAsMap(userId string) map[string]IsuCondition {
 }
 
 // Returns rows to insert now
-func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
+func addIsuConditionToPool(conds []IsuCondition) []IsuCondition {
 	currentHourCondLock.Lock()
 	defer currentHourCondLock.Unlock()
 
-	hour := cond.Timestamp.Truncate(time.Hour)
-	if hour == currentHour[cond.JIAIsuUUID] {
-		if len(currentHourCond[cond.JIAIsuUUID]) > 10 {
-			return nil
-		}
-		currentHourCond[cond.JIAIsuUUID] = append(currentHourCond[cond.JIAIsuUUID], cond)
-		// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
-		return nil
-	} else {
-		copy := currentHourCond[cond.JIAIsuUUID]
-		currentHourCond[cond.JIAIsuUUID] = []IsuCondition{cond}
+	for _, cond := range conds {
+		hour := cond.Timestamp.Truncate(time.Hour)
+		if hour == currentHour[cond.JIAIsuUUID] {
+			if len(currentHourCond[cond.JIAIsuUUID]) > 10 {
+				continue
+			} 
+			currentHourCond[cond.JIAIsuUUID] = append(currentHourCond[cond.JIAIsuUUID], cond)
+			// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
 
-		currentHour[cond.JIAIsuUUID] = hour
-
-		// fmt.Printf("was different len %d\n", len(rowsToInsert))
-		rowsToInsert = append(rowsToInsert, copy...)
-		if len(rowsToInsert) > 1000 {
-			copy := rowsToInsert
-			rowsToInsert = []IsuCondition{}
-			return copy
 		} else {
-			return nil
+			rowsToInsert = append(rowsToInsert, currentHourCond[cond.JIAIsuUUID]...)
+			currentHourCond[cond.JIAIsuUUID] = []IsuCondition{cond}
+			currentHour[cond.JIAIsuUUID] = hour
 		}
+	}
+	// fmt.Printf("was different len %d\n", len(rowsToInsert))
+	if len(rowsToInsert) > 1000 {
+		copy := rowsToInsert
+		rowsToInsert = []IsuCondition{}
+		return copy
+	} else {
+		return nil
 	}
 }
 
