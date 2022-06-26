@@ -73,13 +73,13 @@ func addIsuConditionToPool(cond IsuCondition) []IsuCondition {
 		// fmt.Printf("was same len %d\n", len(currentHourConditions[cond.JIAIsuUUID]))
 		return nil
 	} else {
-		rows := append([]IsuCondition{}, currentHourCond[cond.JIAIsuUUID]...)
-
-		currentHour[cond.JIAIsuUUID] = hour
+		copy := currentHourCond[cond.JIAIsuUUID]
 		currentHourCond[cond.JIAIsuUUID] = []IsuCondition{cond}
 
+		currentHour[cond.JIAIsuUUID] = hour
+
 		// fmt.Printf("was different len %d\n", len(rowsToInsert))
-		rowsToInsert = append(rowsToInsert, rows...)
+		rowsToInsert = append(rowsToInsert, copy...)
 		if len(rowsToInsert) > 1000 {
 			copy := rowsToInsert
 			rowsToInsert = []IsuCondition{}
