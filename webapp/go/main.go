@@ -272,7 +272,8 @@ func main() {
 		e.Logger.Fatalf("failed to connect db: %v", err)
 		return
 	}
-	db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(200)
+	db.SetMaxIdleConns(100)
 	defer db.Close()
 
 	postIsuConditionTargetBaseURL = os.Getenv("POST_ISUCONDITION_TARGET_BASE_URL")
@@ -1083,10 +1084,10 @@ func getIsuConditionsFromDB(jiaIsuUUID string, endTime time.Time, conditionLevel
 	// fullQuery := strings.Join(subqueries, " UNION ")
 
 	conditionListString := strings.Join(conditionList, ",")
-	fullQuery := fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` IN ( %s ) AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, conditionListString, endTime, startTime, limit)
+	fullQuery := fmt.Sprintf("(SELECT `condition`, `is_sitting`, `timestamp`, `message`, `jia_isu_uuid`  FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `condition` IN ( %s ) AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, conditionListString, endTime, startTime, limit)
 
 	if len(conditionList) == 8 {
-		fullQuery = fmt.Sprintf("(SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, endTime, startTime, limit)
+		fullQuery = fmt.Sprintf("(SELECT `condition`, `is_sitting`, `timestamp`, `message`, `jia_isu_uuid` FROM `isu_condition` WHERE `jia_isu_uuid` = '%s' AND `timestamp` < '%s' AND '%s' <= `timestamp` ORDER BY `timestamp` DESC LIMIT %d)", jiaIsuUUID, endTime, startTime, limit)
 	}
 	// fmt.Printf("%v", conditionLevel)
 	// fmt.Println(fullQuery)

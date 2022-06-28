@@ -11,9 +11,11 @@
 
 # Idea (easy)
 - (done, highly effective) Use Nginx cache for asset and icon, and/or set Cache-Control header
+- (Done, highly effective) Select only necessary cols
 - (Done, highly effective) Use WHERE for timestamp in /api/isu/graph
 - (Done, highly effective) Use WHERE IN for condition in /api/condition
 - (Done, highly effective) Use upstream keepalive in Nginx
+- (Done, highly effective) Use db connection pool
 
 # Using memory
 - (Done, highly effective) Bulk insert condition hourly
@@ -28,7 +30,6 @@
 # Chores
 - (Done) Profile backend
 - (Done) Profile db
-- (Skipped, already implemented) Use db connection pool
 - (Done, no effect) No use row.next() in getIsuGraph
 - (Done, NG) Try dealing only with info level conditions
 
