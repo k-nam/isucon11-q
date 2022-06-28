@@ -10,9 +10,10 @@
 - isu_condition timestamp format: '2021-08-10 20:07:03'
 
 # Idea (easy)
-- (done, highly effective) Use Nginx cache for asset and/or set Cache-Control header
+- (done, highly effective) Use Nginx cache for asset and icon, and/or set Cache-Control header
 - (Done, highly effective) Use WHERE for timestamp in /api/isu/graph
 - (Done, highly effective) Use WHERE IN for condition in /api/condition
+- (Done, highly effective) Use upstream keepalive in Nginx
 
 # Using memory
 - (Done, highly effective) Bulk insert condition hourly
