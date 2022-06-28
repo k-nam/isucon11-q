@@ -1397,7 +1397,8 @@ var indexCount = 0
 func getIndex(c echo.Context) error {
 	indexCount++
 	// if indexCount % 1000 == 0 {
-	fmt.Printf("indexCount is %d\n", indexCount)
+	// fmt.Printf("indexCount is %d\n", indexCount)
 	// }
+	c.Response().Header().Set("Cache-Control", "private, max-age=1000000")
 	return c.File(frontendContentsPath + "/index.html")
 }
